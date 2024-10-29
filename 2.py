@@ -31,6 +31,9 @@ class AddressBook(UserDict): #Клас для словника
         if self.data.get(fdName): #Роблю перевірку на співпадіння в поточному словнику користувачів UserDict
             userD = dict(self.data[fdName]) #Зберігаю словник користувача з UserDict якщо є співпадіння 
             return f"{fdName} - {fdValue} ->{userD[fdValue]}" #Повертаю результат пошуку 
+    
+    def find_birthday_users_for_week(self): #Метод пошуку користувачів на наступний тиждень
+        pass
 
     def update_user(self, uUser, uDat=None): #Метод для оновлення даних користувача
         uDatKeys = "".join(dict(uDat).keys()) #Зберігаю ключ з вхідного словника
@@ -166,8 +169,7 @@ def main(): #Основна функція з циклом
             print(book.find_data_user(ub, "birthday")) #Шукаю день народження користувача в книзі
 
         elif command == "birthdays":
-            pass
-        
+            print(book.find_birthday_users_for_week())
         
         elif command == "q": print("break"); break
         else: #Помилкова команда
