@@ -27,13 +27,10 @@ class AddressBook(UserDict): #Клас для словника
     def find(self, fName): #Шукаю в словнику по імені
         return f"Find: {fName} {self.data.get(fName)}" #Повертаю результат
     
-    def find_data_user(self, fdName, fdValue):
+    def find_data_user(self, fdName, fdValue): #Метод для пошуку даних користувачів в UserDict 
         if self.data.get(fdName): #Роблю перевірку на співпадіння в поточному словнику користувачів UserDict
-            userD = dict(self.data[fdName])
-            return f"{fdName} - {fdValue} ->{userD[fdValue]}"
-    
-    def delete(self, dName): #Метод для видалення запису з словника 
-        return f"Delet - {dName} {self.data.pop(dName)}" #Повертаю результат і видаляю користувача
+            userD = dict(self.data[fdName]) #Зберігаю словник користувача з UserDict якщо є співпадіння 
+            return f"{fdName} - {fdValue} ->{userD[fdValue]}" #Повертаю результат пошуку 
 
     def update_user(self, uUser, uDat=None): #Метод для оновлення даних користувача
         uDatKeys = "".join(dict(uDat).keys()) #Зберігаю ключ з вхідного словника
@@ -51,6 +48,9 @@ class AddressBook(UserDict): #Клас для словника
                 return print(f"'{uUser}' -> data has been updated")
             
         else: return print(f"User '{uUser}' -> is missing") #Якщо користувача не знайдено
+    
+    def delete(self, dName): #Метод для видалення запису з словника 
+        return f"Delet - {dName} {self.data.pop(dName)}" #Повертаю результат і видаляю користувача
 
 
 
