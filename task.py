@@ -10,30 +10,54 @@
         @6 - "exit" - закрити програму
         @7 - "add-birthday [ім'я] [дата народження]" - додаю до контакту день народження
         @8 - "show-birthday [ім'я]" - показую день народження контакту
-        9 - "birthdays" - повертає список користувачів, яких потрібно привітати по днях на наступному тижні
+        @9 - "birthdays" - повертає список користувачів, яких потрібно привітати по днях на наступному тижні
 '''
-
-from collections import UserDict
-
-
 """ 
-Спростив клас Record і добавив функціонал до UserDict. На мою думку так буде простіше
+Спростив клас Record і добавив функціонал до UserDict.
 """
+
+
+from datetime import datetime, timedelta
+from collections import UserDict
+import re
+
+
 class AddressBook(UserDict): #Клас для словника
     
     def add_record(self, data): #Метод для додавання словника до self.data
         super().update(data) #Додаю словник через super
     
+    
     def find(self, fName): #Шукаю в словнику по імені
         return f"Find: {fName} {self.data.get(fName)}" #Повертаю результат
+    
     
     def find_data_user(self, fdName, fdValue): #Метод для пошуку даних користувачів в UserDict 
         if self.data.get(fdName): #Роблю перевірку на співпадіння в поточному словнику користувачів UserDict
             userD = dict(self.data[fdName]) #Зберігаю словник користувача з UserDict якщо є співпадіння 
             return f"{fdName} - {fdValue} ->{userD[fdValue]}" #Повертаю результат пошуку 
     
+    
     def find_birthday_users_for_week(self): #Метод пошуку користувачів на наступний тиждень
-        pass
+        try:
+            today_time = datetime.today().date() #Зберігаю поточну дату
+            dict_res = {} #Словник для результату пошуку
+            
+            for ur in self.data: #Проходжусь по словнику UserDict
+                users_dicts = dict(self.data[ur]) #Зберігаю словник користувача
+                
+                if users_dicts.get("birthday"): #Роблю перевірку наявність дати народження
+                    birtDT = datetime.strptime(users_dicts["birthday"], '%Y-%m-%d').date() #Перетворюю ДН з словника в об'єкт datetime
+                    repYear = birtDT.replace(year=today_time.year) #Замінюю рік з ДН на поточний
+                    
+                    res_bird = int(( repYear - today_time ).days) #Віднімаю ДН від поточної дати і зберігаю як int
+                    if res_bird <= 7 and res_bird >= 0: #Перевіряю чи на цьому тижні ДН
+                        dict_res.update({ur: birtDT.isoformat()}) #Додаю до словника результатат перевірки 
+                        
+            return dict_res #Повертаю словник з результатом пошуку
+        
+        except: print("Wrong date in the dictionary") #Виводжу повідомлення якщо є помилкова дата народження в словнику
+            
 
     def update_user(self, uUser, uDat=None): #Метод для оновлення даних користувача
         uDatKeys = "".join(dict(uDat).keys()) #Зберігаю ключ з вхідного словника
@@ -46,21 +70,24 @@ class AddressBook(UserDict): #Клас для словника
                 return print(f"'{uUser}' -> data has been updated")
             
             if userD.get(uDatKeys): #Якщо є ключ в користувача то оновлюю значення словника
-                userD.update(uDat)
-                super().update({uUser: userD})
+                userD.update(uDat) #Добавляю до словника користувача <- вхідний словник
+                super().update({uUser: userD}) #Оновлюю користувача в UserDict
                 return print(f"'{uUser}' -> data has been updated")
             
         else: return print(f"User '{uUser}' -> is missing") #Якщо користувача не знайдено
+    
     
     def delete(self, dName): #Метод для видалення запису з словника 
         return f"Delet - {dName} {self.data.pop(dName)}" #Повертаю результат і видаляю користувача
 
 
 
-class Field(): #Базовий клас
+
+class Field(): #Базовий клас поля для контакту
     def __init__(self, fd_Name, fd_Phone=None) -> None:
         self.fd_Name = fd_Name
         self.fd_Phone = fd_Phone
+
 
 class Name(Field): #Клас для імені 
     def __init__(self, valName) -> None:
@@ -69,24 +96,30 @@ class Name(Field): #Клас для імені
     def __str__(self) -> str:
         return self.valName
 
+
 class Phone(Field): #Клас для телефону
     def __init__(self, valPhone) -> None:
         self.valPhone = valPhone
     
     def phone_validation(self): #Валідація номеру телефону
-        if isinstance(self.valPhone, str) and len(self.valPhone) == 13 and self.valPhone.startswith("+380"): #Перевірка номера телефону
-            return self.valPhone
+        if isinstance(self.valPhone, str) and len(self.valPhone) == 10: #Перевірка номера телефону
+            return self.valPhone 
         else: return print("Wrong phone format")
 
-class Birthday(Field): #Клас для дати народження ###########################
-    def __init__(self, valBirt):
-        try:
-            pass
-            # Додайте перевірку коректності даних
-            # та перетворіть рядок на об'єкт datetime
-        except ValueError:
-            raise ValueError("Invalid date format. Use DD.MM.YYYY")
 
+class Birthday(Field): #Клас для дати народження
+    def __init__(self, valBirthday):
+        self.valBirthday = valBirthday
+    
+    def birthday_validation(self): #Валідація дати народження
+        try:
+            validBirt = "".join(re.findall("\\d{2}\\.\\d{2}\\.\\d{4}", self.valBirthday)) #Додаю до рядка результат пошуку елементів врядку 
+            self.lBirthday = datetime.strptime(validBirt, '%d.%m.%Y').date() #Пробую перетворити ДН з словника в об'єкт datetime
+            return self.lBirthday.isoformat() #Повертаю об'єкт datetime з методом isoformat()
+        # except: return f"GGGGGG" 
+        except ValueError: 
+            raise ValueError("Invalid date format. Use DD.MM.YYYY") #Виводжу помилку
+        
 
 
 
@@ -112,22 +145,25 @@ def add_user_book(addUser, User_book): #Функція додавання кор
     if u: #Роблю перевірку на пусте значення
         rec = Record(u) #Створюю об'єкт класу Record
         User_book.add_record(rec.dict_record()) # І записую в UserDict
+        print(f"Сontact '{u}' added")
     else: print("!Add a username!") #Виводжу попередження що ім'я не введене
 
 
-def add_phone_to_user(args, User_book): #Функція додавання до користувача телефону
+def add_phone_to_user(args, User_book): #Функція додавання до користувача телефону ([name, phone], dict)
     n, p = args #Розбиваю список
-    p = Phone(p).phone_validation()
-    if p != None:
+    p = Phone(p).phone_validation() #Зберігаю завалідований номер телефону
+    if p != None: #Роблю перевірку на відсутність валідації
         User_book.update_user(n, {"phone": p}) #Оновлюю телефон користувача
 
 
-def add_birthday_to_user(args, User_book): #Функція додавання до користувача дня народження
+def add_birthday_to_user(args, User_book): #Функція додавання до користувача дня народження (['name', 'birthday'], dict)
     n, b = args #Розбиваю список
-    User_book.update_user(n, {"birthday": b}) #Оновлюю ДН користувача
+    b = Birthday(b).birthday_validation() #Перезаписую ДН з валідацією
+    User_book.update_user(n, {"birthday": b}) #Оновлюю ДН користувача в словнику
 
 
-# #####################################################################################################################################
+
+# # # #####################################################################################################################################
 def parse_input(user_input): #Функція для парсингу команд
     cmd, *args = user_input.split() #Розбиваю команду
     cmd = cmd.strip().lower() #Записую команду в окрему змінну
@@ -145,7 +181,7 @@ def main(): #Основна функція з циклом
             print("Good bye!")
             break
         
-        elif command == "hello":
+        elif command == "hello": #Привітання
             print("Hello! \nHow can I help you?")
         
         elif command == "all": #Виводжу всі контакти з AddressBook
@@ -161,14 +197,14 @@ def main(): #Основна функція з циклом
             up = "".join(args) #Додаю ім'я зі списку до рядка
             print(book.find_data_user(up, "phone")) #Шукаю телефон користувача в книзі
         
-        elif command == "add-birthday": #Додаю день народження
+        elif command == "add-birthday": #Додаю день народження до користувача
             add_birthday_to_user(args, book)
 
         elif command == "show-birthday": #Виводжу день народження користувача
             ub = "".join(args) #Додаю ім'я зі списку до рядка
             print(book.find_data_user(ub, "birthday")) #Шукаю день народження користувача в книзі
 
-        elif command == "birthdays":
+        elif command == "birthdays": #Виводжу дні народження користувачів на найближчий тиждень
             print(book.find_birthday_users_for_week())
         
         elif command == "q": print("break"); break
